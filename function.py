@@ -2,6 +2,7 @@ import tensorflow as tf
 import cv2
 from io import BytesIO
 from google.cloud import storage
+import keras_cv
 import numpy as np
 
 
@@ -42,7 +43,7 @@ def get_prediction(image, model):
 
 def upload_image_to_bucket(bucket_name, blob_name, image):
     """Uploads an image from an OpenCV image object to a GCP Storage bucket."""
-    storage_client = storage.Client()
+    storage_client = storage.Client(project="chickmed")
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
 
@@ -53,7 +54,9 @@ def upload_image_to_bucket(bucket_name, blob_name, image):
     # Upload the image to GCP Storage
     blob.upload_from_file(img_bytes, content_type='image/jpeg')
 
-    return blob.public_url
+    url = blob.public_url.replace("storage.googleapis.com","storage.cloud.google.com")
+
+    return url
 
 
 def draw_prediction(image, model):
