@@ -4,6 +4,9 @@ from io import BytesIO
 from google.cloud import storage
 import keras_cv
 import numpy as np
+import mysql.connector
+from mysql.connector import Error
+import datetime
 
 
 def load_model(model_path):
@@ -54,7 +57,8 @@ def upload_image_to_bucket(bucket_name, blob_name, image):
     # Upload the image to GCP Storage
     blob.upload_from_file(img_bytes, content_type='image/jpeg')
 
-    url = blob.public_url.replace("storage.googleapis.com","storage.cloud.google.com")
+    url = blob.public_url.replace(
+        "storage.googleapis.com", "storage.cloud.google.com")
 
     return url
 
@@ -126,7 +130,7 @@ def draw_prediction(image, model):
         cv2.line(original_image, (x2, y2),
                  (x2, y2-linewidth), color_list[class_id], 4)
         results.append({
-            'class': class_mapping[class_id],
+            'class': class_id,
             'confidence': str(confindences[i]),
             'boxes': [str(x1), str(y1), str(x2), str(y2)]
         })
@@ -134,3 +138,31 @@ def draw_prediction(image, model):
     # save image
     # cv2.imwrite('prediction.jpg',original_image)
     return results, original_image
+
+# result
+
+
+def store_to_db(results, id):
+    host = 'localhost'
+    database = 'chickmed'
+    user = 'root'
+    password = ''
+
+    cnx = mysql.connector.connect(user=user, password=password,
+                                  host=host,
+                                  database=database)
+    try:
+        cursor = cnx.cursor()
+
+        query_models = "BEGIN; INSERT INTO report_models (date, raw_image, result_image) VALUES (%s, %s, %s); INSERT INTO report_disease_models (report_model_id, disease_model_id, confidence, bounding_box) VALUES (LAST_INSERT_ID(), %s, %s, %s); COMMIT;"
+        bounding_box_merge = ' '.join(results['data'][0]['boxes'])
+        value = (results['date'], results['raw_image'], results['processed_image'], results['data']
+                 [0]['class'], results['data'][0]['confidence'], bounding_box_merge)
+        cursor.execute(query_models, value)
+    except Error as e:
+        print("Error while connecting to MySQL", e)
+    finally:
+        if (cnx.is_connected()):
+            cursor.close()
+            cnx.close()
+            print("MySQL connection is closed")
