@@ -55,8 +55,11 @@ def predict():
         'status': 200,
         'message': 'OK',
         'data': results,
-        'image_url': image_processed_url
+        'image_url': image_processed_url,
+        'date': time_now
     }
+
+    store_to_db(results, image_processed_url, time_now)
 
     return jsonify(message)
 
