@@ -7,6 +7,7 @@ from PIL import Image
 
 app = Flask(__name__)
 
+
 @app.route('/predict', methods=['POST'])
 def predict():
 
@@ -38,22 +39,22 @@ def predict():
     # Read the image from GCP Storage
     image = read_image_from_bucket(gcp_bucket_name, gcp_blob_name)
 
-    model_2 = tf.keras.models.load_model("Best_Model_YOLOv8.h5",
-    custom_objects={
-    "YOLOV8Detector": keras_cv.models.YOLOV8Detector,
-    "YOLOV8Backbone": keras_cv.models.YOLOV8Backbone
-            },
-    compile = False)
+    model = load_model('model.h5')
 
-    prediction = draw_prediction(image,model_2)
+    results, image_processed = draw_prediction(image, model)
+    # Upload the image to GCP Storage
+    image_processed_url = upload_image_to_bucket(
+        gcp_bucket_name, gcp_blob_name, image_processed)
 
     message = {
         'status': 200,
         'message': 'OK',
-        'result': prediction
+        'data': results,
+        'image_url': image_processed_url
     }
 
     return jsonify(message)
+
 
 if __name__ == '__main__':
     app.run()
