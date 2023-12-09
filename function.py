@@ -148,15 +148,23 @@ def store_to_db(results, id):
     user = 'root'
     password = ''
 
-    for i in range(len(results['data'])):
-        cnx = mysql.connector.connect(user=user, password=password,
-                                    host=host,
-                                    database=database)
-        
-        cursor = cnx.cursor()
+    cnx = mysql.connector.connect(user=user, password=password,
+                                  host=host,
+                                  database=database)
 
-        query_models = "BEGIN; INSERT INTO report_models (date, raw_image, result_image) VALUES (%s, %s, %s); INSERT INTO report_disease_models (report_model_id, disease_model_id, confidence, bounding_box) VALUES (LAST_INSERT_ID(), %s, %s, %s); COMMIT;"
-        bounding_box_merge = ' '.join(results['data'][i]['boxes'])
-        value = (results['date'], results['raw_image'], results['processed_image'], results['data']
-                    [i]['class'], results['data'][i]['confidence'], bounding_box_merge)
-        cursor.execute(query_models, value)
+    cursor = cnx.cursor()
+    query_models = "INSERT INTO report_models (user_id,date, raw_image, result_image) VALUES (%s,%s, %s, %s)"
+    value = (results['user_id'], results['date'], results['raw_image'],
+             results['processed_image'])
+    cursor.execute(query_models, value)
+
+    last_id = cursor.lastrowid
+    query_report_disease_models = "INSERT INTO report_disease_models (report_model_id, disease_model_id, confidence, bounding_box) VALUES (%s, %s, %s, %s)"
+    for data in results['data']:
+        bounding_box_merge = ' '.join(data['boxes'])
+        value = (last_id, data['class'],
+                 data['confidence'], bounding_box_merge)
+        # Move to the next result set
+        cursor.execute(query_report_disease_models, value)
+    # get the last inserted id
+    cnx.commit()
