@@ -148,21 +148,15 @@ def store_to_db(results, id):
     user = 'root'
     password = ''
 
-    cnx = mysql.connector.connect(user=user, password=password,
-                                  host=host,
-                                  database=database)
-    try:
+    for i in range(len(results['data'])):
+        cnx = mysql.connector.connect(user=user, password=password,
+                                    host=host,
+                                    database=database)
+        
         cursor = cnx.cursor()
 
         query_models = "BEGIN; INSERT INTO report_models (date, raw_image, result_image) VALUES (%s, %s, %s); INSERT INTO report_disease_models (report_model_id, disease_model_id, confidence, bounding_box) VALUES (LAST_INSERT_ID(), %s, %s, %s); COMMIT;"
-        bounding_box_merge = ' '.join(results['data'][0]['boxes'])
+        bounding_box_merge = ' '.join(results['data'][i]['boxes'])
         value = (results['date'], results['raw_image'], results['processed_image'], results['data']
-                 [0]['class'], results['data'][0]['confidence'], bounding_box_merge)
+                    [i]['class'], results['data'][i]['confidence'], bounding_box_merge)
         cursor.execute(query_models, value)
-    except Error as e:
-        print("Error while connecting to MySQL", e)
-    finally:
-        if (cnx.is_connected()):
-            cursor.close()
-            cnx.close()
-            print("MySQL connection is closed")

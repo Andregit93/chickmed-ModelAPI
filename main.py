@@ -25,6 +25,7 @@ def predict():
 
     # Load the image from the POST request
     im = request.files['image']
+    user_id = request.args.get('user_id')
 
     im = Image.open(im)
 
@@ -52,14 +53,16 @@ def predict():
         gcp_bucket_name, processed_file_name, image_processed)
 
     message = {
+        'user_id': user_id,
         'status': 200,
         'message': 'OK',
         'data': results,
-        'image_url': image_processed_url,
+        'processed_image': image_processed_url,
+        'raw_image': "https://storage.cloud.google.com/chickmedbuckets/" + raw_image_url,
         'date': time_now
     }
 
-    store_to_db(results, image_processed_url, time_now)
+    store_to_db(message, image_processed_url)
 
     return jsonify(message)
 
