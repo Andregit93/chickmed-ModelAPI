@@ -9,11 +9,13 @@
 # import io
 # from io import BytesIO
 # from PIL import Image
-import datetime
-import numpy as np
-# import keras_cv
-import mysql.connector
-from mysql.connector import Error
+# import datetime
+# import numpy as np
+# # import keras_cv
+# import mysql.connector
+# from mysql.connector import Error
+import requests
+import json
 
 results = {
     "data": [
@@ -28,32 +30,62 @@ results = {
             "confidence": "0.89685863"
         }
     ],
-    "date": "20231209_013136",
+    "date": "20231211_101507",
     "message": "OK",
-    "processed_image": "https://storage.cloud.google.com/chickmedbuckets/processed_images/process_image_20231209_013136.jpg",
-    "raw_image": "raw_images/original_image_20231209_013136.jpg",
+    "processed_image": "https://storage.googleapis.com/chickmed/processed_images/process_image_20231211_101507.jpg",
+    "raw_image": "https://storage.googleapis.com/chickmed/raw_images/original_image_20231211_101507.jpg",
     "status": 200,
-    "user_id": 123
+    "user_id": "1"
 }
 
-host = 'localhost'
-database = 'chickmed'
-user = 'root'
-password = ''
+url = "http://127.0.0.1:8000/api/reports/store"
+requests.post(url, json=json.dumps(results))
+print(json.dumps(results))
 
-cnx = mysql.connector.connect(user=user, password=password,
-                                host=host,
-                                database=database)
+# database = 'chickmed'
+# user = 'root'
+# password = 'ch1ckm3d_db'
+# unix_socket = '/cloudsql/chickmed:asia-southeast2:chickmed'
 
-cursor = cnx.cursor()
+# cnx = mysql.connector.connect(user=user, password=password,
+#                                 unix_socket=unix_socket,
+#                                 database=database)
+
+# cursor = cnx.cursor()
+# query_models = "INSERT INTO report_models (user_id,date, raw_image, result_image) VALUES (%s,%s, %s, %s)"
+# value = (results['user_id'], results['date'], results['raw_image'],
+#             results['processed_image'])
+# cursor.execute(query_models, value)
+
+# last_id = cursor.lastrowid
+# query_report_disease_models = "INSERT INTO report_disease_models (report_model_id, disease_model_id, confidence, bounding_box) VALUES (%s, %s, %s, %s)"
+# for data in results['data']:
+#     bounding_box_merge = ' '.join(data['boxes'])
+#     value = (last_id, data['class'],
+#                 data['confidence'], bounding_box_merge)
+#     # Move to the next result set
+#     cursor.execute(query_report_disease_models, value)
+# # get the last inserted id
+# cnx.commit()
+
+# host = 'localhost'
+# database = 'chickmed'
+# user = 'root'
+# password = ''
+
+# cnx = mysql.connector.connect(user=user, password=password,
+#                                 host=host,
+#                                 database=database)
+
+# cursor = cnx.cursor()
 
 
  
-query_models = "BEGIN; INSERT INTO report_models (date, raw_image, result_image) VALUES (%s, %s, %s); INSERT INTO report_disease_models (report_model_id, disease_model_id, confidence, bounding_box) VALUES (LAST_INSERT_ID(), %s, %s, %s); COMMIT;"
-bounding_box_merge = ' '.join(results['data'][0]['boxes'])
-value = (results['date'], results['raw_image'], results['processed_image'], results['data']
-            [0]['class'], results['data'][0]['confidence'], bounding_box_merge)
-cursor.execute(query_models, value)
+# query_models = "BEGIN; INSERT INTO report_models (date, raw_image, result_image) VALUES (%s, %s, %s); INSERT INTO report_disease_models (report_model_id, disease_model_id, confidence, bounding_box) VALUES (LAST_INSERT_ID(), %s, %s, %s); COMMIT;"
+# bounding_box_merge = ' '.join(results['data'][0]['boxes'])
+# value = (results['date'], results['raw_image'], results['processed_image'], results['data']
+#             [0]['class'], results['data'][0]['confidence'], bounding_box_merge)
+# cursor.execute(query_models, value)
 
 
 

@@ -1,3 +1,4 @@
+import json
 from flask import Flask, request, jsonify
 import tensorflow as tf
 import keras_cv
@@ -5,9 +6,9 @@ from function import *
 import datetime
 import io
 from PIL import Image
+import requests
 
 app = Flask(__name__)
-
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -15,8 +16,8 @@ def predict():
     time_now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     original_file_name = 'original_image' + '_' + time_now + '.jpg'
 
-    bucket_name = "chickmedbuckets"
-    raw_image_url = "raw_images/" + original_file_name
+    bucket_name = "chickmed"
+    raw_image = "raw_images/" + original_file_name
     project_name = "chickmed"
 
     # Configure bucket and blob
@@ -25,7 +26,7 @@ def predict():
 
     # Load the image from the POST request
     im = request.files['image']
-    user_id = request.args.get('user_id')
+    user_id = request.form.get('user_id')
 
     im = Image.open(im)
 
@@ -34,16 +35,23 @@ def predict():
     im.save(bs, "JPEG")
     bs.seek(0)
 
-    blob = bucket.blob(raw_image_url)
+    blob = bucket.blob(raw_image)
     blob.upload_from_file(bs, content_type="image/jpeg")
+    blob.make_public()
+    raw_image_url = blob.public_url
+
 
     # GCP Storage settings
-    gcp_bucket_name = 'chickmedbuckets'
+    gcp_bucket_name = 'chickmed'
 
     # Read the image from GCP Storage
-    image = read_image_from_bucket(gcp_bucket_name, raw_image_url)
+    image = read_image_from_bucket(gcp_bucket_name, raw_image)
 
-    model = load_model('model.h5')
+    # Load model from bucket
+    blob_model = bucket.blob('models/model.h5')
+    blob_model.download_to_filename('tmp/model.h5')
+
+    model = load_model('tmp/model.h5')
 
     processed_file_name = 'processed_images/process_image' + '_' + time_now + '.jpg'
 
@@ -58,11 +66,14 @@ def predict():
         'message': 'OK',
         'data': results,
         'processed_image': image_processed_url,
-        'raw_image': "https://storage.cloud.google.com/chickmedbuckets/" + raw_image_url,
+        'raw_image': raw_image_url,
         'date': time_now
     }
 
-    store_to_db(message, image_processed_url)
+    url = "http://127.0.0.1:8000/api/reports/store"
+    r = requests.post(url, json=json.dumps(message))
+
+    # store_to_db(message, image_processed_url)
 
     return jsonify(message)
 

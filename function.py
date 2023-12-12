@@ -57,8 +57,9 @@ def upload_image_to_bucket(bucket_name, blob_name, image):
     # Upload the image to GCP Storage
     blob.upload_from_file(img_bytes, content_type='image/jpeg')
 
-    url = blob.public_url.replace(
-        "storage.googleapis.com", "storage.cloud.google.com")
+    blob.make_public()
+
+    url = blob.public_url
 
     return url
 
@@ -142,14 +143,15 @@ def draw_prediction(image, model):
 # result
 
 
+
 def store_to_db(results, id):
-    host = 'localhost'
     database = 'chickmed'
     user = 'root'
     password = ''
+    unix_socket = '/cloudsql/chickmed:asia-southeast2:chickmed'
 
     cnx = mysql.connector.connect(user=user, password=password,
-                                  host=host,
+                                  unix_socket=unix_socket,
                                   database=database)
 
     cursor = cnx.cursor()
@@ -168,3 +170,4 @@ def store_to_db(results, id):
         cursor.execute(query_report_disease_models, value)
     # get the last inserted id
     cnx.commit()
+
