@@ -49,7 +49,7 @@ The REST API to the ChickMed Prediction Model is described below.
         'processed_image': image_processed_url,
         'raw_image': "https://storage.cloud.google.com/chickmedbuckets/" + raw_image_url,
         'date': time_now
-    }
+        }
 
 
 
