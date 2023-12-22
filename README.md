@@ -1,5 +1,4 @@
 <h1 align="center">ChickMed - Chicken Disease Detection</h1>
-<h2>Prediction Model API Documentation</h2>
 
 ## 🛠️ Installation Steps
 
